@@ -9,18 +9,16 @@
     <title>vueCalcul 구조화 및 변수생각해서 만들기</title>
 </head>
 
-<!-- 화면은 grid로 분할하여 구성하는것이 효율적으로 느껴짐 -->
-
 <body>
     <div id="root">
         <div class="calculator">
             <div class="cal-display">
-                <p>{{ ui_formular || 0 }}</p>
-                {{ ui_current || "0" }}
+                <p> {{ ui_formular || 0}}</p>
+                <p> {{ ui_current || 0 }}</p>
             </div>
             <div @click="onClickClear" class="btn">C</div>
             <div @click="onClickPlusMinus" class="btn">+/-</div>
-            <div @click="onClickOperator('%')" class="btn">%</div>
+            <div @click="onClickPercent" class="btn">%</div>
             <div @click="onClickOperator('/')" class="btn cal-operator">/</div>
             <div @click="onClickNumber(7)" class="btn">7</div>
             <div @click="onClickNumber(8)" class="btn">8</div>
@@ -35,66 +33,94 @@
             <div @click="onClickNumber(3)" class="btn">3</div>
             <div @click="onClickOperator('+')" class="btn cal-operator">+</div>
             <div @click="onClickNumber('0')" class="btn btn-zero">0</div>
-            <div @click="onClickDot" class="btn">.</div>
-            <div @click="onClickResult" class="btn  cal-operator">=</div>
+            <div @click="onClickOperator('.')" class="btn">.</div>
+            <div @click="onClickResult" class="btn cal-operator">=</div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script>
-        /*
-        * +/-를  눌렀을 때 계산식에 반영되도록
-         1. 숫자를 누른다.
-         2. +/- 를 누른다.
-         3. 숫자를 또 누른다 ui_current는 이어진다.
-         4. 만약 연산자를 누르면 현재 ui_current를 계산식에 반영하고 ui_current를 초기화 한다.
-
-        */
         const app = new Vue({
             el: "#root",
             data: {
-                ui_formular: "",
-                ui_current: "",
-                isOperaterClicked: false
+                ui_formular: "", // 화면 상단에 노출되는 계산식
+                ui_current: "", // 현재 입력중인 화면에 나타나는 값
+                isResultOnDisplay: false, // 사용자가 = 버튼을 눌렀을 때 true로 바뀐다. 이 후 다시 숫자를 눌렀을 때 display 초기화 후 다시 계산
             },
             methods: {
-                // 숫자를 클릭 하였을 때 ui_current에 입력중인 숫자가 보여진다 isOperaterClicked가 false면 ui_current를 초기화
                 onClickNumber(number) {
-                    if (!this.isOperaterClicked) {
-                        this.ui_current += number;
+                    if (this.isResultOnDisplay) { //사용자가 = 버튼 누르고 새로 계산을 할 때 현재 저장된 값 초기화
+                        this.ui_current = '';
+                        this.ui_formular = '';
+                        this.isResultOnDisplay = false;
                     }
+                    this.ui_current += number;
                 },
                 onClickOperator(operator) {
-                    this.isOperaterClicked = true;
-                    this.ui_formular += this.ui_current
-                    this.ui_formular += operator;
-                    this.ui_current = "";
-                    this.isOperaterClicked = false;
+                    if (!this.isResultOnDisplay) {
+                        if (operator === '.') {
+                            if (this.ui_formular[this.ui_formular.length - 1] !== '.') {
+                                this.ui_formular += this.ui_current + '.';
+                                this.ui_current = '';
+                            }
+                        } else {
+                            this.ui_formular += this.ui_current + operator;
+                            this.ui_current = "";
+                        }
+                    } else {
+                        this.onClickClear();
+                    }
                 },
                 onClickPlusMinus() {
-                    this.ui_current =
-                        this.ui_current.charAt(0) === "-" ?
-                        this.ui_current.slice(1) :
-                        `-${this.ui_current}`;
-                },
-                onClickPercent() {},
-                onClickDot() {
-                    if (this.ui_current.indexOf(".") === -1) {
-                        // 현재 입력중인 숫자에 이미 .이 있지 않으면
-                        this.ui_current += ".";
-                        this.ui_formular += ".";
+                    if (!this.isResultOnDisplay) {
+                        this.ui_current =
+                            this.ui_current.charAt(0) === "-" ?
+                            this.ui_current.slice(1) :
+                            `-${this.ui_current}`;
                     } else {
-                        console.log("dot aleady exist");
+                        this.onClickClear();
                     }
+                },
+                onClickPercent() {
+                    if (!this.isResultOnDisplay) {
+                        // 퍼센트 계산 ex) 10000 * 20% = 2000
+                        this.ui_formular += this.ui_current;
+                        var per_formular = this.ui_formular.split('*');
+                        var total = per_formular[0];
+                        var percent = per_formular[1];
+
+                        this.ui_formular += "%";
+                        this.ui_current = total * percent / 100;
+                        this.isResultOnDisplay = true;
+                    } else {
+                        this.onClickClear();
+                    }
+
                 },
                 onClickClear() {
                     this.ui_formular = "";
                     this.ui_current = "";
-                    this.isOperaterClicked = false;
                 },
                 onClickResult() {
-                    this.ui_formular += this.ui_current
+                    this.ui_formular += this.ui_current; //현재 입력중인 값을 계산식에 반영 후 
+                    if (this.isOperator()) { // 계산식 끝에 필요없는 연산자가 붙은 지 확인 후 제거
+                        this.ui_formular = this.ui_formular.substring(0, this.ui_formular.length - 1);
+                    }
                     this.ui_current = eval(this.ui_formular);
+                    this.isResultOnDisplay = true;
+                },
+                isOperator() {
+                    // 현재 계산식의 마지막에 연산자가 있는지
+                    if (this.ui_formular[this.ui_formular.length - 1] === '+' ||
+                        this.ui_formular[this.ui_formular.length - 1] === '-' ||
+                        this.ui_formular[this.ui_formular.length - 1] === '*' ||
+                        this.ui_formular[this.ui_formular.length - 1] === '/' ||
+                        this.ui_formular[this.ui_formular.length - 1] === '%'
+                    ) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 }
             }
         });
