@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="style.css" />
+    <title>vueCalcul 구조화 및 변수생각해서 만들기</title>
+</head>
+
+<!-- 화면은 grid로 분할하여 구성하는것이 효율적으로 느껴짐 -->
+
+<body>
+    <div id="root">
+        <div class="calculator">
+            <div class="cal-display">
+                <p>{{ ui_formular || 0 }}</p>
+                {{ ui_current || "0" }}
+            </div>
+            <div @click="onClickClear" class="btn">C</div>
+            <div @click="onClickPlusMinus" class="btn">+/-</div>
+            <div @click="onClickOperator('%')" class="btn">%</div>
+            <div @click="onClickOperator('/')" class="btn cal-operator">/</div>
+            <div @click="onClickNumber(7)" class="btn">7</div>
+            <div @click="onClickNumber(8)" class="btn">8</div>
+            <div @click="onClickNumber(9)" class="btn">9</div>
+            <div @click="onClickOperator('*')" class="btn cal-operator">x</div>
+            <div @click="onClickNumber(4)" class="btn">4</div>
+            <div @click="onClickNumber(5)" class="btn">5</div>
+            <div @click="onClickNumber(6)" class="btn">6</div>
+            <div @click="onClickOperator('-')" class="btn cal-operator">-</div>
+            <div @click="onClickNumber(1)" class="btn">1</div>
+            <div @click="onClickNumber(2)" class="btn">2</div>
+            <div @click="onClickNumber(3)" class="btn">3</div>
+            <div @click="onClickOperator('+')" class="btn cal-operator">+</div>
+            <div @click="onClickNumber('0')" class="btn btn-zero">0</div>
+            <div @click="onClickDot" class="btn">.</div>
+            <div @click="onClickResult" class="btn  cal-operator">=</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+        /*
+        * +/-를  눌렀을 때 계산식에 반영되도록
+         1. 숫자를 누른다.
+         2. +/- 를 누른다.
+         3. 숫자를 또 누른다 ui_current는 이어진다.
+         4. 만약 연산자를 누르면 현재 ui_current를 계산식에 반영하고 ui_current를 초기화 한다.
+
+        */
+        const app = new Vue({
+            el: "#root",
+            data: {
+                ui_formular: "",
+                ui_current: "",
+                isOperaterClicked: false
+            },
+            methods: {
+                // 숫자를 클릭 하였을 때 ui_current에 입력중인 숫자가 보여진다 isOperaterClicked가 false면 ui_current를 초기화
+                onClickNumber(number) {
+                    if (!this.isOperaterClicked) {
+                        this.ui_current += number;
+                    }
+                },
+                onClickOperator(operator) {
+                    this.isOperaterClicked = true;
+                    this.ui_formular += this.ui_current
+                    this.ui_formular += operator;
+                    this.ui_current = "";
+                    this.isOperaterClicked = false;
+                },
+                onClickPlusMinus() {
+                    this.ui_current =
+                        this.ui_current.charAt(0) === "-" ?
+                        this.ui_current.slice(1) :
+                        `-${this.ui_current}`;
+                },
+                onClickPercent() {},
+                onClickDot() {
+                    if (this.ui_current.indexOf(".") === -1) {
+                        // 현재 입력중인 숫자에 이미 .이 있지 않으면
+                        this.ui_current += ".";
+                        this.ui_formular += ".";
+                    } else {
+                        console.log("dot aleady exist");
+                    }
+                },
+                onClickClear() {
+                    this.ui_formular = "";
+                    this.ui_current = "";
+                    this.isOperaterClicked = false;
+                },
+                onClickResult() {
+                    this.ui_formular += this.ui_current
+                    this.ui_current = eval(this.ui_formular);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
